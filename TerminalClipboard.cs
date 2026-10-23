@@ -105,7 +105,7 @@ internal static class TerminalClipboard
         Place(ui.GetComponent<RectTransform>(), .015f, y, .97f, h);
         ui.FieldText = label;
         ui.FieldLabel.raycastTarget = false;
-        ui.InstructionText = label == "Mixers" ? "Select up to four mixers in stage order." : "Select up to four ingredient storage shelves.";
+        ui.InstructionText = label == "Mixers" ? "Select one to four mixers in stage order, one per ingredient." : "Select up to four ingredient storage shelves.";
         ui.ExtendedInstructionText = ui.InstructionText;
         var entries = new Il2CppReferenceArray<RectTransform>(RecipePlan.EquipmentLimit);
         var contents = ui.Entries[0].parent.GetComponent<RectTransform>();

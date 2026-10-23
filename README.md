@@ -13,10 +13,10 @@ The release includes one production mod DLL. No editor, item-grant tools, game b
 ## Set up a recipe
 
 1. Place the terminal on an owned property. With clipboard **9** equipped, press **E** to manage its physical assignments.
-2. Assign one product supply shelf, one output destination, **four distinct mixing stations**, and up to four ingredient supply shelves. Output accepts a storage shelf, **Packaging Station Mk I / Mk II**, or **Brick Press**. Native selection controls accept only the appropriate equipment types. Equipment names follow their in-game names.
+2. Assign one product supply shelf, one output destination, **one to four distinct mixing stations**, and up to four ingredient supply shelves. Assign at least one mixer per ingredient step. Output accepts a storage shelf, **Packaging Station Mk I / Mk II**, or **Brick Press**. Native selection controls accept only the appropriate equipment types. Equipment names follow their in-game names.
 3. Put away the clipboard and press **E** at the computer. Add one to four ingredients in mixing order. Use the arrows to reorder, the cross to remove, and inline dropdowns to choose shelves and mixers. Each ingredient needs a different mixer. Thresholds are fixed at **20**.
 4. Select one handler and one chemist on **Staff & routing**. Both must belong to this property, have payment lockers, and have their previous jobs cleared using the native clipboard. Unavailable employees remain visible with a reason.
-5. Check the flow diagram, then press **Start**. A four-ingredient recipe creates five handler routes and assigns all four mixers to the chemist. The native AI performs loading, mixing and output transfers.
+5. Check the flow diagram, then press **Start**. The handler gets one route per ingredient destination plus the product-feed route; the chemist gets the mixers you actually assigned. A one-ingredient setup needs one mixer and normally two routes; four ingredients need four mixers and five routes. The native AI performs loading, mixing and output transfers.
 
 **One ingredient closet is enough.** Assign that closet once with the clipboard; all four ingredients can resolve to it automatically. The handler still gets four ingredient routes, one from that closet to each mixer, plus the product-feed route from the product shelf. Each mixer's whitelist selects the correct ingredient. You may also explicitly choose the same closet for several steps when multiple shelves are assigned.
 
@@ -38,7 +38,7 @@ The employee picker distinguishes selected staff in blue, available staff in gre
 
 Stop also removes the terminal-owned brick-press assignment. To change output, Stop first, change the clipboard Output field, then Start: storage/packaging output leaves the handler without a press assignment; choosing a new brick press assigns only the new press. Existing running jobs from an older version should be stopped and started once to apply the new automatic press assignment.
 
-With jobs stopped and the computer closed, use empty hands and the native hold-right-click action to pick up the terminal. Chain terminals by assigning the first terminal's output shelf as the next terminal's product supply. Each terminal requires its own four mixers and staff pair.
+With jobs stopped and the computer closed, use empty hands and the native hold-right-click action to pick up the terminal. Chain terminals by assigning the first terminal's output shelf as the next terminal's product supply. Each terminal has its own one-to-four-mixer pool and staff pair. A five-, six-, or seven-ingredient chain can use a four-step terminal followed by a one-, two-, or three-step terminal; no empty stages are required.
 
 Recipes are saved per terminal under the active save's `ModData/SpecialMixingTerminal` folder. Back up saves before adding or removing mods. Removing the DLL does not restore mixer settings or employee jobs; stop and dismantle a setup first if you want to remove it.
 
@@ -52,7 +52,9 @@ Version 0.5.4's game-independent logistics checks verify shared-closet resolutio
 
 The original 256px terminal/flask icon is embedded in the production DLL and reused by the game's item definition. The release thumbnail is the same artwork; no external asset bundle is required.
 
-Four physically assigned mixers are required even for recipes with fewer ingredients. Unused mixers remain assigned to the chemist, with an empty ingredient whitelist. Repeated use of a single mixer is not supported. Native employee schedules, payment, inventory and pathfinding still apply. Start currently requires empty mixers.
+One to four physically assigned mixers are supported. Each ingredient needs a different mixer, so the recipe cannot have more steps than its assigned mixer pool. Extra assigned mixers remain assigned to the chemist with an empty ingredient whitelist; they do not add recipe stages. A single mixer supports a single ingredient step and sends its output directly to the chosen destination. Repeated use of a mixer for multiple steps is not supported. Native employee schedules, payment, inventory and pathfinding still apply. Start currently requires empty assigned mixers.
+
+Version 0.5.5 passed 30 game-independent checks, including layouts and destinations for one through four mixers, insufficient/duplicate station rejection, and 4+1/4+2/4+3 terminal chains. These checks do not replace native gameplay acceptance.
 
 ## Build and release
 

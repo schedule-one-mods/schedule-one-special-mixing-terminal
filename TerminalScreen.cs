@@ -215,7 +215,7 @@ internal sealed partial class TerminalScreen
         Input(_body, _plan.Name, "Recipe name", 0, 0, .65f, .10f,
             value => { _plan.Name = string.IsNullOrWhiteSpace(value) ? "Special mix" : value.Trim(); Changed(); });
         Label(_body, $"{_plan.AssignedMixerIds.Count} mixers assigned", .69f, .01f, .31f, .08f, .019f, style: FontStyles.Bold);
-        var mapping = "Four distinct mixers · Threshold 20 · Each ingredient uses its own mixer.";
+        var mapping = "1–4 mixers · Threshold 20 · One distinct mixer per ingredient.";
         Label(_body, mapping, 0, .12f, 1, .065f, .017f);
 
         Label(_body, $"MIXING ORDER · {_plan.Steps.Count} ingredients", 0, .21f, .70f, .06f, .020f, style: FontStyles.Bold);

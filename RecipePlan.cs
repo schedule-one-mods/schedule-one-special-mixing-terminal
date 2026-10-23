@@ -71,6 +71,25 @@ public sealed class RecipePlan
         return IngredientShelfIds.Contains(requested) ? requested : IngredientShelfIds.Count == 1 ? IngredientShelfIds[0] : "";
     }
 
+    public string ValidateMixerLayout()
+    {
+        if (AssignedMixerIds.Count < 1 || AssignedMixerIds.Count > EquipmentLimit) return "Assign one to four mixing stations with the clipboard.";
+        if (AssignedMixerIds.Any(string.IsNullOrWhiteSpace) || AssignedMixerIds.Distinct().Count() != AssignedMixerIds.Count) return "Assign distinct mixing stations.";
+        if (Steps.Count < 1 || Steps.Count > EquipmentLimit) return "A terminal supports one to four ingredients, each on a different mixer.";
+        if (Steps.Count > AssignedMixerIds.Count) return $"This recipe needs at least {Steps.Count} mixing stations, one per ingredient.";
+        var used = new HashSet<string>();
+        for (var i = 0; i < Steps.Count; i++)
+        {
+            var id = ResolveMixerId(i);
+            if (string.IsNullOrEmpty(id)) return $"Choose the mixer for ingredient {i + 1}.";
+            if (!used.Add(id)) return "Each ingredient needs a different mixer; a mixer cannot route back to itself.";
+        }
+        return "";
+    }
+
+    public string ResolveDestinationId(int stepIndex)
+        => stepIndex < 0 || stepIndex >= Steps.Count ? "" : stepIndex + 1 < Steps.Count ? ResolveMixerId(stepIndex + 1) : OutputShelfId;
+
     public List<(string Source, string Destination)> RequiredRoutes()
     {
         var routes = new List<(string, string)>();

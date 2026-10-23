@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.5.5
+
+- Remove the exact-four-station requirement. Each terminal accepts one through four distinct mixers and one through four ingredient steps, with one mixer per step.
+- One-step recipes send their mixer's output directly to the selected destination. Two- and three-step recipes chain only their actual stages.
+- Keep the native handler route and chemist station capacity checks proportional to the assigned setup.
+- Hide unassigned mixer slots in the flow diagram instead of displaying them as missing equipment.
+- Support five-, six-, and seven-ingredient production chains as 4+1, 4+2 and 4+3 across terminals, without padding the second terminal to four stations.
+- Shared supplies and automatic brick-press staffing remain supported. Self-routing/reusing a mixer for several ingredients remains unsupported.
+- Build and 30 game-independent logistics checks passed; native gameplay acceptance remains pending.
+
 ## 0.5.4
 
 - Verify one ingredient closet can feed four different mixers: four ingredient routes plus a separate product-feed route. Deduplicate only identical source/destination pairs.

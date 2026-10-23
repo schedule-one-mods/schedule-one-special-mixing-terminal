@@ -195,7 +195,7 @@ internal static class NativeJobs
             var outputError = ValidateHandlerOutput(owner, handler.Employee, handler.Config);
             if (outputError != "") return outputError;
         }
-        if (chemists.Sum(c => c.Config.Stations.MaxItems) < mixerIds.Count) return "The chemist does not have four available station slots.";
+        if (chemists.Sum(c => c.Config.Stations.MaxItems) < mixerIds.Count) return "The chemist does not have enough station slots for the assigned mixers.";
         foreach (var id in mixerIds)
         {
             var station = owner.FindItem(id)!.Cast<MixingStation>();

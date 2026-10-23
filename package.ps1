@@ -28,7 +28,7 @@ $manifest = [ordered]@{
     name = 'SpecialMixingTerminal'
     version_number = $version
     website_url = 'https://github.com/schedule-one-mods/schedule-one-special-mixing-terminal'
-    description = 'Program four native mixing stations from a purchasable terminal, with clipboard equipment selection, one handler and one chemist.'
+    description = 'Program one to four native mixing stations from a purchasable terminal, with clipboard equipment selection, one handler and one chemist.'
     dependencies = @('LavaGang-MelonLoader-0.7.3')
 }
 $manifest | ConvertTo-Json -Depth 5 | Set-Content -LiteralPath (Join-Path $stage 'manifest.json') -Encoding utf8

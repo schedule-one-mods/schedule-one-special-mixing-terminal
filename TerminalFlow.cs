@@ -99,7 +99,7 @@ internal sealed partial class TerminalScreen
         Label(product.transform, EquipmentName(_plan.InputShelfId, "Not assigned"), .04f, .38f, .92f, .55f, .016f, feedGood ? LinkGood : LinkBad, alignment: TextAlignmentOptions.Center);
         FlowArrow(view, .035f, .835f, .035f, .675f, feedGood ? LinkGood : LinkBad);
         WorkerBadge(view, feed?.Worker ?? (handlerReady ? handler : null), .055f, .765f, HandlerColor);
-        for (var column = 0; column < 4; column++)
+        for (var column = 0; column < ids.Count; column++)
         {
             var x = column * .255f;
             var id = column < ids.Count ? ids[column] : "";
@@ -136,7 +136,7 @@ internal sealed partial class TerminalScreen
                 actualStation || chemistReady && actualChemist == null ? ChemistColor : LinkBad, .15f, true);
             if (stepIndex < 0) continue;
             var destination = station?.stationConfiguration.Destination.SelectedObject;
-            var expectedDestination = stepIndex + 1 < _plan.Steps.Count ? _plan.ResolveMixerId(stepIndex + 1) : _plan.OutputShelfId;
+            var expectedDestination = _plan.ResolveDestinationId(stepIndex);
             var correct = destination != null && destination.GUID.ToString() == expectedDestination;
             var next = ids.IndexOf(expectedDestination);
             if (next >= 0) FlowArrow(view, x + .232f, .55f, next * .255f - .003f, .55f, correct ? LinkGood : LinkBad);
