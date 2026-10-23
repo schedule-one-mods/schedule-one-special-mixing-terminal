@@ -1,0 +1,12 @@
+{
+  "game": "Schedule I",
+  "game_versions_tested": ["0.4.7f5"],
+  "scripting_backend": "IL2CPP",
+  "platforms_tested": ["Windows x64"],
+  "loader": {"name": "MelonLoader", "versions_tested": ["0.7.3"]},
+  "single_player_testing": "Native configuration and Start/Stop checks on isolated saves; full production cycle pending acceptance",
+  "co_op_client_testing": "Unverified; single-player integration only",
+  "mod_manager_installation_testing": "Pending user acceptance from the published release",
+  "runtime_game_version_gate": false,
+  "other_game_versions": "Unverified"
+}
