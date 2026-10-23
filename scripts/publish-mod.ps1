@@ -13,9 +13,10 @@ Set-StrictMode -Version Latest
 if ($FromHook -and $env:SCHEDULE_ONE_PUBLISH_ACTIVE -eq '1') { return }
 if ($PrepareOnly -and $CommitMessage) { throw 'PrepareOnly never creates a commit. Omit CommitMessage.' }
 function Invoke-Git {
-    param([Parameter(ValueFromRemainingArguments)][string[]]$Arguments)
-    $output = & git @Arguments 2>&1
-    if ($LASTEXITCODE -ne 0) { throw "git $($Arguments[0]) failed: $($output -join [Environment]::NewLine)" }
+    # Keep native flags such as tag -a out of PowerShell parameter binding.
+    $gitArguments = @($args)
+    $output = & git @gitArguments 2>&1
+    if ($LASTEXITCODE -ne 0) { throw "git $($gitArguments[0]) failed: $($output -join [Environment]::NewLine)" }
     return ($output -join "`n").Trim()
 }
 function Get-ReleaseVersion([string]$XmlText) {

@@ -1,0 +1,4 @@
+* text=auto
+.githooks/* text eol=lf
+*.dll binary
+*.zip binary
