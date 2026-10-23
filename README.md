@@ -13,7 +13,7 @@ The release includes one production mod DLL. No editor, item-grant tools, game b
 ## Set up a recipe
 
 1. Place the terminal on an owned property. With clipboard **9** equipped, press **E** to manage its physical assignments.
-2. Assign one product supply shelf, one output shelf, **four distinct mixing stations**, and up to four ingredient supply shelves. Native selection controls accept only the appropriate equipment types. Mixer and shelf names follow their in-game names.
+2. Assign one product supply shelf, one output destination, **four distinct mixing stations**, and up to four ingredient supply shelves. Output accepts a storage shelf, **Packaging Station Mk I / Mk II**, or **Brick Press**. Native selection controls accept only the appropriate equipment types. Equipment names follow their in-game names.
 3. Put away the clipboard and press **E** at the computer. Add one to four ingredients in mixing order. Use the arrows to reorder, the cross to remove, and inline dropdowns to choose shelves and mixers. Each ingredient needs a different mixer. Thresholds are fixed at **20**.
 4. Select one handler and one chemist on **Staff & routing**. Both must belong to this property, have payment lockers, and have their previous jobs cleared using the native clipboard. Unavailable employees remain visible with a reason.
 5. Check the flow diagram, then press **Start**. A four-ingredient recipe creates five handler routes and assigns all four mixers to the chemist. The native AI performs loading, mixing and output transfers.
@@ -22,7 +22,7 @@ The screen uses the game's native computer camera transition and controls. **Esc
 
 ## Read the flow diagram
 
-Ingredient supply shelves appear above their mixers. Product supply feeds the first mixer from below; the final output shelf is below the rightmost mixer. The mixer chain runs left to right. Blue worker badges identify handlers; yellow badges inside mixer headers identify chemists. The selected handler shows its actual used/native route capacity and the pending recipe's route count.
+Ingredient supply shelves appear above their mixers. Product supply feeds the first mixer from below; the final output destination is below the rightmost mixer. The mixer chain runs left to right. Blue worker badges identify handlers; yellow badges inside mixer headers identify chemists. The selected handler shows its actual used/native route capacity and the pending recipe's route count. Packaging supplies and downstream packaging jobs still use the game's normal setup.
 
 Before Start, green connections indicate assignments that pass readiness checks. After Start, the diagram reads the actual native routes, whitelists, thresholds, destinations and employee station lists. Missing or conflicting links show red. Readiness does not create employee jobs early.
 
@@ -39,6 +39,10 @@ Recipes are saved per terminal under the active save's `ModData/SpecialMixingTer
 ## Validation and limitations
 
 Native integration checks on isolated save copies verified threshold 20, ingredient whitelists, chained destinations, five handler routes, four chemist station assignments, Stop releasing jobs while preserving payment lockers, and saved mixer settings after restart. The UI was inspected during development. A complete production cycle and clean installation through Mod Manager remain pending user acceptance. These checks do not guarantee compatibility with other game versions or mods.
+
+Version 0.5.3 removes scene searches from the per-frame update and laundering refresh hooks, repeated terminal re-registration, and employee scene searches. Terminal/interface caches are maintained on placement, pickup and scene unload. Clipboard state updates only on changes. Equipment/employee lookup caches refresh on demand, and closed computer screens do no diagnostic work. Clipboard refresh callbacks are released with their panels. See [PERFORMANCE.md](PERFORMANCE.md) for the source audit and remaining measurement work. No measured FPS improvement is claimed yet. New packaging-output delivery and the inventory icon still need in-game acceptance.
+
+The original 256px terminal/flask icon is embedded in the production DLL and reused by the game's item definition. The release thumbnail is the same artwork; no external asset bundle is required.
 
 Four physically assigned mixers are required even for recipes with fewer ingredients. Unused mixers remain assigned to the chemist, with an empty ingredient whitelist. Repeated use of a single mixer is not supported. Native employee schedules, payment, inventory and pathfinding still apply. Start currently requires empty mixers.
 

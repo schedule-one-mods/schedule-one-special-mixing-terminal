@@ -1,5 +1,6 @@
 using Il2CppScheduleOne;
 using Il2CppScheduleOne.Employees;
+using Il2CppScheduleOne.DevUtilities;
 using Il2CppScheduleOne.EntityFramework;
 using Il2CppScheduleOne.ItemFramework;
 using Il2CppScheduleOne.Management;
@@ -19,7 +20,34 @@ internal static class NativeJobs
 {
     internal static bool IsRunning(TerminalConfigurable owner) => owner.Plan.NativeJobsOwned;
     internal static string Status(TerminalConfigurable owner) => owner.Plan.NativeJobsOwned ? "Running · Native handler routes and chemist stations assigned" : "Stopped";
-    internal static Employee? Employee(string id) => Object.FindObjectsOfType<Employee>(true).FirstOrDefault(e => e.GUID.ToString() == id);
+    private static readonly List<Employee> _employees = new();
+    private static readonly Dictionary<string, Employee> _employeeById = new();
+    private static float _employeesAt;
+    private static int _employeeCount = -1;
+    internal static IReadOnlyList<Employee> Employees()
+    {
+        if (!NetworkSingleton<EmployeeManager>.InstanceExists) return Array.Empty<Employee>();
+        var source = NetworkSingleton<EmployeeManager>.Instance.AllEmployees;
+        if (source == null) return Array.Empty<Employee>();
+        if (Time.realtimeSinceStartup >= _employeesAt || source.Count != _employeeCount)
+        {
+            _employeesAt = Time.realtimeSinceStartup + 1f;
+            _employeeCount = source.Count;
+            _employees.Clear(); _employeeById.Clear();
+            for (var i = 0; i < source.Count; i++)
+            {
+                var employee = source[i];
+                if (employee == null) continue;
+                _employees.Add(employee); _employeeById[employee.GUID.ToString()] = employee;
+            }
+        }
+        return _employees;
+    }
+    internal static Employee? Employee(string id)
+    {
+        Employees();
+        return _employeeById.TryGetValue(id, out var employee) && employee != null ? employee : null;
+    }
     private static EntityConfiguration? Configuration(Employee? employee) => employee?.TryCast<IConfigurable>()?.Configuration;
 
     internal static string Ready(TerminalConfigurable owner, EEmployeeType role)
@@ -53,7 +81,7 @@ internal static class NativeJobs
     internal static string Unavailable(TerminalConfigurable owner, Employee employee, EEmployeeType type)
     {
         if (employee.AssignedProperty != owner.ParentProperty || employee.EmployeeType != type) return "Different property or role";
-        foreach (var other in Object.FindObjectsOfType<TerminalConfigurable>(true))
+        foreach (var other in Mod.Terminals)
             if (other != owner && (other.Plan.AssignedHandlerIds.Contains(employee.GUID.ToString()) || other.Plan.AssignedChemistIds.Contains(employee.GUID.ToString())))
                 return "Reserved by another mixing terminal";
         var config = Configuration(employee);
@@ -208,5 +236,8 @@ internal static class NativeJobs
     internal static void Tick() { }
     internal static void BeforeSave() { }
     internal static void AfterSave() { }
-    internal static void Clear() { }
+    internal static void Clear()
+    {
+        _employees.Clear(); _employeeById.Clear(); _employeeCount = -1; _employeesAt = 0;
+    }
 }

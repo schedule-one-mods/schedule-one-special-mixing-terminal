@@ -30,6 +30,7 @@ internal sealed partial class TerminalScreen
     private readonly string _path;
     private readonly MelonLogger.Instance _log;
     private readonly RecipePlan _plan;
+    private readonly TerminalConfigurable _owner;
     private readonly TextMeshProUGUI _font;
     private readonly Image _background;
     private readonly RectTransform _root;
@@ -51,11 +52,12 @@ internal sealed partial class TerminalScreen
     private bool _teamPage;
     private bool _dirty;
     private List<Choice>? _ingredientChoices;
-    private TerminalConfigurable Owner => _station.GetComponent<TerminalConfigurable>();
+    private TerminalConfigurable Owner => _owner;
 
     internal TerminalScreen(LaunderingStation station, string path, MelonLogger.Instance log, RecipePlan plan)
     {
         _station = station;
+        _owner = station.GetComponent<TerminalConfigurable>();
         _native = station.Interface;
         _path = path;
         _log = log;
@@ -123,8 +125,6 @@ internal sealed partial class TerminalScreen
     internal void Tick()
     {
         if (!_native.IsOpen) return;
-        _startButton.interactable = !_plan.NativeJobsOwned;
-        _stopButton.interactable = _plan.NativeJobsOwned;
         if (_teamPage && _liveFlow != null && Time.realtimeSinceStartup >= _nextFlow)
         {
             _nextFlow = Time.realtimeSinceStartup + .5f;
@@ -133,7 +133,11 @@ internal sealed partial class TerminalScreen
         }
     }
 
-    internal void Dispose() => GameInput.DeregisterExitListener(_exit);
+    internal void Dispose()
+    {
+        GameInput.DeregisterExitListener(_exit);
+        if (_native != null && _native.mainState != null) _native.mainState.remove_OnRemovedFromStack(_onClose);
+    }
 
     private void Close()
     {
@@ -148,6 +152,7 @@ internal sealed partial class TerminalScreen
         if (_picker != null) { Object.Destroy(_picker.gameObject); _picker = null; }
         if (!_plan.NativeJobsOwned) Save();
         _native.OnClose();
+        Mod.ScreenClosed(this);
     }
 
     private void ClosePicker()
@@ -398,7 +403,7 @@ internal sealed partial class TerminalScreen
     }
 
     private List<Choice> StaffChoices(EEmployeeType role)
-        => Object.FindObjectsOfType<Employee>(true)
+        => NativeJobs.Employees()
             .Where(employee => employee.AssignedProperty == _station.ParentProperty && employee.EmployeeType == role)
             .OrderBy(employee => employee.FullName)
             .Select(employee => new Choice(employee.GUID.ToString(), employee.FullName, role.ToString(), employee.MugshotSprite,
@@ -448,7 +453,7 @@ internal sealed partial class TerminalScreen
         for (var i = 0; i < _plan.AssignedMixerIds.Count; i++)
         {
             var id = _plan.AssignedMixerIds[i];
-            var item = Equipment().FirstOrDefault(e => e.GUID.ToString() == id);
+            var item = Owner.FindItem(id);
             if (item != null) choices.Add(new Choice(id, EquipmentName(id)));
         }
         return choices;
@@ -457,14 +462,14 @@ internal sealed partial class TerminalScreen
     private string EquipmentName(string id, string empty = "Choose…")
     {
         if (string.IsNullOrEmpty(id)) return empty;
-        var item = Equipment().FirstOrDefault(e => e.GUID.ToString() == id);
+        var item = Owner.FindItem(id);
         if (item == null) return "Equipment unavailable";
         var assignedName = item.TryCast<Il2CppScheduleOne.Management.IConfigurable>()?.Configuration?.Name?.Value;
         return string.IsNullOrWhiteSpace(assignedName) ? item.GetManagementName() : assignedName;
     }
 
     private string EmployeeName(string id, string empty)
-        => string.IsNullOrEmpty(id) ? empty : Object.FindObjectsOfType<Employee>(true).FirstOrDefault(e => e.GUID.ToString() == id)?.FullName ?? "Employee unavailable";
+        => string.IsNullOrEmpty(id) ? empty : NativeJobs.Employee(id)?.FullName ?? "Employee unavailable";
 
     private static string ItemName(string id, string empty = "Choose ingredient…")
         => string.IsNullOrEmpty(id) ? empty : Registry.GetItem(id)?.Name ?? "Item unavailable";

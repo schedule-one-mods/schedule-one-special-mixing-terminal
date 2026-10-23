@@ -5,6 +5,7 @@ using Il2CppScheduleOne.ItemFramework;
 using Il2CppScheduleOne.Management;
 using Il2CppScheduleOne.ObjectScripts;
 using Il2CppTMPro;
+using System.Text;
 using UnityEngine;
 using UnityEngine.UI;
 using Object = UnityEngine.Object;
@@ -16,11 +17,12 @@ internal sealed partial class TerminalScreen
     private sealed record ActualRoute(Employee Worker, string Source, string Destination, AdvancedTransitRoute Route);
     private static readonly Color LinkGood = new(.30f, .80f, .49f);
     private static readonly Color LinkBad = new(.94f, .40f, .30f);
+    private readonly StringBuilder _flowKey = new(2048);
 
     private List<ActualRoute> ReadActualRoutes()
     {
         var result = new List<ActualRoute>();
-        foreach (var worker in Object.FindObjectsOfType<Employee>(true))
+        foreach (var worker in NativeJobs.Employees())
         {
             if (worker.AssignedProperty != _station.ParentProperty) continue;
             var config = worker.TryCast<IConfigurable>()?.Configuration?.TryCast<PackagerConfiguration>();
@@ -28,7 +30,9 @@ internal sealed partial class TerminalScreen
             for (var i = 0; i < config.Routes.Routes.Count; i++)
             {
                 var route = config.Routes.Routes[i];
-                result.Add(new ActualRoute(worker, TransitItem(route.Source)?.GUID.ToString() ?? "", TransitItem(route.Destination)?.GUID.ToString() ?? "", route));
+                var destination = TransitItem(route.Destination)?.GUID.ToString() ?? "";
+                if (!_plan.AssignedMixerIds.Contains(destination)) continue;
+                result.Add(new ActualRoute(worker, TransitItem(route.Source)?.GUID.ToString() ?? "", destination, route));
             }
         }
         return result;
@@ -57,23 +61,29 @@ internal sealed partial class TerminalScreen
         var chemistReady = !running && chemistError == "";
         var ids = Enumerable.Range(0, Math.Min(4, _plan.Steps.Count)).Select(_plan.ResolveMixerId)
             .Concat(_plan.AssignedMixerIds).Where(id => id != "").Distinct().Take(4).ToList();
-        var signature = string.Join("|", routes.Select(route => route.Worker.GUID + ":" + route.Source + ":" + route.Destination + ":" + route.Route.Filter.GetDescription()));
-        signature += running + ":" + handler?.GUID + ":" + chemist?.GUID + ":" + handlerError + ":" + chemistError;
+        var key = _flowKey.Clear();
+        foreach (var route in routes)
+        {
+            key.Append('|').Append(route.Worker.GUID).Append(':').Append(route.Source).Append(':').Append(route.Destination).Append(':').Append(route.Route.Filter.Mode);
+            var items = route.Route.Filter.Items;
+            for (var i = 0; i < items.Count; i++) key.Append(':').Append(items[i]?.ID);
+        }
+        key.Append('|').Append(running).Append(':').Append(handler?.GUID).Append(':').Append(chemist?.GUID).Append(':').Append(handlerError).Append(':').Append(chemistError);
         foreach (var id in ids)
         {
             var station = Owner.FindItem(id)?.TryCast<MixingStation>();
-            if (station == null) { signature += "|missing:" + id; continue; }
+            if (station == null) { key.Append("|missing:").Append(id); continue; }
             var config = station.stationConfiguration;
             var filter = station.MixerSlot.PlayerFilter;
             var worker = config.AssignedChemist.SelectedNPC?.TryCast<Employee>();
-            signature += "|" + id + ":" + EquipmentName(id) + ":" + config.StartThrehold.Value + ":" + config.Destination.SelectedObject?.GUID + ":" + worker?.GUID;
-            signature += ":" + (worker != null && StationListed(worker, station));
-            signature += ":" + filter?.Type;
-            if (filter != null) for (var i = 0; i < filter.ItemIDs.Count; i++) signature += ":" + filter.ItemIDs[i];
+            key.Append('|').Append(id).Append(':').Append(EquipmentName(id)).Append(':').Append(config.StartThrehold.Value).Append(':').Append(config.Destination.SelectedObject?.GUID).Append(':').Append(worker?.GUID);
+            key.Append(':').Append(worker != null && StationListed(worker, station)).Append(':').Append(filter?.Type);
+            if (filter != null) for (var i = 0; i < filter.ItemIDs.Count; i++) key.Append(':').Append(filter.ItemIDs[i]);
         }
-        signature += "|" + _plan.InputShelfId + ":" + _plan.OutputShelfId + ":" + _plan.Steps.Count;
-        for (var i = 0; i < _plan.Steps.Count; i++) signature += _plan.Steps[i].IngredientId + ":" + EquipmentName(_plan.ResolveSupplyId(i));
-        signature += EquipmentName(_plan.InputShelfId) + EquipmentName(_plan.OutputShelfId);
+        key.Append('|').Append(_plan.InputShelfId).Append(':').Append(_plan.OutputShelfId).Append(':').Append(_plan.Steps.Count);
+        for (var i = 0; i < _plan.Steps.Count; i++) key.Append('|').Append(_plan.Steps[i].IngredientId).Append(':').Append(EquipmentName(_plan.ResolveSupplyId(i)));
+        key.Append('|').Append(EquipmentName(_plan.InputShelfId)).Append('|').Append(EquipmentName(_plan.OutputShelfId));
+        var signature = key.ToString();
         if (_flowSignature == signature) return;
         _flowSignature = signature;
         Clear(view);

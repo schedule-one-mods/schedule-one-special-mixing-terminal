@@ -11,6 +11,13 @@ namespace SpecialMixingTerminal;
 
 internal static class TerminalClipboard
 {
+    private static TerminalConfigurable? _panelOwner;
+
+    internal static void BeforeDestroyPanel()
+    {
+        if (_panelOwner != null && !_panelOwner.IsDestroyed) _panelOwner.ResetFieldCallbacks();
+        _panelOwner = null;
+    }
     internal static bool BeforeGetTypeName(EConfigurableType __0, ref string __result)
     {
         if (__0 != TerminalConfigurable.TerminalType) return true;
@@ -31,8 +38,10 @@ internal static class TerminalClipboard
 
     private static void BuildPanel(ManagementInterface ui, TerminalConfigurable owner)
     {
-        owner.RefreshFields();
         ui.DestroyConfigPanel();
+        owner.ResetFieldCallbacks();
+        owner.RefreshFields();
+        _panelOwner = owner;
         var template = ui.GetConfigPanelPrefab(EConfigurableType.Chemist).Cast<ChemistConfigPanel>();
         var panel = Object.Instantiate(template, ui.PanelContainer, false);
         ui.loadedPanel = panel;
@@ -43,7 +52,7 @@ internal static class TerminalClipboard
         // Reuse native rows, icons, remove buttons, counts, edit controls and selectors.
         var content = root;
         Single(template.BedUI, content, owner.ProductSupply, "Product supply", .005f, .10f);
-        Single(template.BedUI, content, owner.OutputShelf, "Output shelf", .12f, .10f);
+        Single(template.BedUI, content, owner.OutputShelf, "Output", .12f, .10f);
         Multiple(template.StationsUI, content, owner.Mixers, "Mixers", .265f, .315f);
         Multiple(template.StationsUI, content, owner.IngredientSupplies, "Ingredient shelves", .64f, .315f);
         if (owner.Plan.NativeJobsOwned)
@@ -67,7 +76,7 @@ internal static class TerminalClipboard
         Place(ui.NoneSelected.GetComponent<RectTransform>(), .04f, 0, .79f, 1);
         Place(ui.MultipleSelected.GetComponent<RectTransform>(), .04f, 0, .79f, 1);
         FitText(ui.gameObject, 20, 28);
-        ui.InstructionText = "Select a storage shelf on this property.";
+        ui.InstructionText = label == "Output" ? "Select a storage shelf, Packaging Station Mk I / Mk II, or Brick Press on this property." : "Select a storage shelf on this property.";
         ui.ExtendedInstructionText = ui.InstructionText;
         var fields = new Il2CppSystem.Collections.Generic.List<ObjectField>(); fields.Add(field);
         ui.Bind(fields);

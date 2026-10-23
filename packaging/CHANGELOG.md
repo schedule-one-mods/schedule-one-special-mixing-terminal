@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.5.3
+
+- Output can be a storage shelf, Packaging Station Mk I / Mk II, or Brick Press, using the final mixer's native destination.
+- Replace per-frame terminal scene searches and laundering refresh-hook scene searches with lifecycle-managed caches.
+- Discover existing terminals once per load; register new placements through native initialization instead of repeating registration every second.
+- Update terminal interactivity only when clipboard state changes; tick only the active computer screen.
+- Resolve employees from the native employee manager, cache equipment lookups, and inspect only routes feeding this terminal's mixers.
+- Reuse a flow-signature buffer and remove native filter-description generation from diagnostic polling.
+- Release clipboard UI refresh listeners and screen exit/state callbacks with their owners.
+- Add an original embedded terminal/flask inventory and shop icon, plus a package thumbnail.
+- FPS comparison, new packaging destination delivery and icon rendering await in-game acceptance; no measured performance claim is made.
+
 ## 0.5.2
 
 First published release.

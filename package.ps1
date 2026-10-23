@@ -12,6 +12,7 @@ try {
     $author = [string]$info.ConstructorArguments[3].Value
     if ($assembly.MainModule.Types.FullName -match 'DevTools|PlacementProbe|NativeAudit') { throw 'Development tooling found in production assembly.' }
     if ($assembly.MainModule.AssemblyReferences.Name -match 'DevTools') { throw 'Production references development assembly.' }
+    if ($assembly.MainModule.Resources.Name -notcontains 'SpecialMixingTerminal.TerminalIcon.png') { throw 'Embedded inventory icon is missing.' }
 } finally { $assembly.Dispose() }
 $project = [xml](Get-Content -LiteralPath (Join-Path $PSScriptRoot 'SpecialMixingTerminal.csproj') -Raw)
 if ($name -ne 'Special Mixing Terminal' -or $author -ne 'Dekode1859' -or $version -notmatch '^\d+\.\d+\.\d+$' -or $project.Project.PropertyGroup.Version -ne $version) {
@@ -22,6 +23,7 @@ New-Item -ItemType Directory -Path (Join-Path $stage 'Mods') -Force | Out-Null
 Copy-Item -LiteralPath $dll -Destination (Join-Path $stage 'Mods/SpecialMixingTerminal.dll')
 Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'README.md'),(Join-Path $PSScriptRoot 'THIRD-PARTY-NOTICES.md') -Destination $stage
 Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'packaging/CHANGELOG.md'),(Join-Path $PSScriptRoot 'packaging/compatibility.json') -Destination $stage
+Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'Assets/terminal-icon.png') -Destination (Join-Path $stage 'icon.png')
 $manifest = [ordered]@{
     name = 'SpecialMixingTerminal'
     version_number = $version
@@ -38,7 +40,7 @@ Compress-Archive -Path (Join-Path $stage '*') -DestinationPath $zip
 Add-Type -AssemblyName System.IO.Compression.FileSystem
 $archive = [IO.Compression.ZipFile]::OpenRead($zip)
 try {
-    $expected = @('manifest.json','compatibility.json','README.md','CHANGELOG.md','THIRD-PARTY-NOTICES.md','Mods/SpecialMixingTerminal.dll') | Sort-Object
+    $expected = @('manifest.json','compatibility.json','README.md','CHANGELOG.md','THIRD-PARTY-NOTICES.md','icon.png','Mods/SpecialMixingTerminal.dll') | Sort-Object
     $actual = @($archive.Entries | Where-Object { $_.Name } | ForEach-Object { $_.FullName.Replace('\','/') }) | Sort-Object
     if (Compare-Object $expected $actual) { throw 'Unexpected package files; production allowlist check failed.' }
 } finally { $archive.Dispose() }

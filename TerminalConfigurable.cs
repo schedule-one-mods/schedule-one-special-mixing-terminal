@@ -5,6 +5,7 @@ using Il2CppScheduleOne.DevUtilities;
 using Il2CppScheduleOne.EntityFramework;
 using Il2CppScheduleOne.Management;
 using Il2CppScheduleOne.ObjectScripts;
+using Il2CppScheduleOne.Packaging;
 using Il2CppScheduleOne.PlayerScripts;
 using Il2CppScheduleOne.Property;
 using Il2CppScheduleOne.UI.Management;
@@ -68,20 +69,21 @@ public sealed class TerminalConfigurable : MonoBehaviour
         IngredientSupplies = new ObjectListField(_config) { MaxItems = RecipePlan.EquipmentLimit };
         ProductSupply.TypeRequirements.Add(Il2CppType.Of<PlaceableStorageEntity>());
         OutputShelf.TypeRequirements.Add(Il2CppType.Of<PlaceableStorageEntity>());
+        OutputShelf.TypeRequirements.Add(Il2CppType.Of<PackagingStation>());
+        OutputShelf.TypeRequirements.Add(Il2CppType.Of<PackagingStationMk2>());
+        OutputShelf.TypeRequirements.Add(Il2CppType.Of<BrickPress>());
         Mixers.TypeRequirements.Add(Il2CppType.Of<MixingStation>());
         // The native selector compares concrete types, so Mk II needs its own
         // entry even though it derives from MixingStation.
         Mixers.TypeRequirements.Add(Il2CppType.Of<MixingStationMk2>());
         IngredientSupplies.TypeRequirements.Add(Il2CppType.Of<PlaceableStorageEntity>());
-        ProductSupply.onObjectChanged.AddListener((UnityAction<BuildableItem>)(item => { if (RejectChange()) return; Plan.InputShelfId = item == null ? "" : item.GUID.ToString(); Save(); }));
-        OutputShelf.onObjectChanged.AddListener((UnityAction<BuildableItem>)(item => { if (RejectChange()) return; Plan.OutputShelfId = item == null ? "" : item.GUID.ToString(); Save(); }));
-        Mixers.onListChanged.AddListener((UnityAction<NativeItems>)(items => { if (RejectChange()) return; Plan.AssignedMixerIds = Ids(items); Save(); }));
-        IngredientSupplies.onListChanged.AddListener((UnityAction<NativeItems>)(items => { if (RejectChange()) return; Plan.IngredientShelfIds = Ids(items); Save(); }));
+        ResetFieldCallbacks();
         _ready = true;
         RegisterWithProperty();
         var property = station.ParentProperty;
         station.onDestroyed.AddListener((UnityAction)(() =>
         {
+            Mod.ForgetTerminal(this);
             if (property != null) property.Configurables.Remove(this.Cast<IConfigurable>());
             DestroyWorldspaceUI();
         }));
@@ -97,6 +99,22 @@ public sealed class TerminalConfigurable : MonoBehaviour
 
     [HideFromIl2Cpp]
     internal void Save() => Plan.Save(Path);
+
+    [HideFromIl2Cpp]
+    internal void ResetFieldCallbacks()
+    {
+        // These fields belong exclusively to this terminal. Native Bind adds UI
+        // refresh listeners; discard them when that panel is destroyed so old
+        // clipboard panels and managed callbacks cannot accumulate.
+        ProductSupply.onObjectChanged.RemoveAllListeners();
+        OutputShelf.onObjectChanged.RemoveAllListeners();
+        Mixers.onListChanged.RemoveAllListeners();
+        IngredientSupplies.onListChanged.RemoveAllListeners();
+        ProductSupply.onObjectChanged.AddListener((UnityAction<BuildableItem>)(item => { if (RejectChange()) return; Plan.InputShelfId = item == null ? "" : item.GUID.ToString(); Save(); }));
+        OutputShelf.onObjectChanged.AddListener((UnityAction<BuildableItem>)(item => { if (RejectChange()) return; Plan.OutputShelfId = item == null ? "" : item.GUID.ToString(); Save(); }));
+        Mixers.onListChanged.AddListener((UnityAction<NativeItems>)(items => { if (RejectChange()) return; Plan.AssignedMixerIds = Ids(items); Save(); }));
+        IngredientSupplies.onListChanged.AddListener((UnityAction<NativeItems>)(items => { if (RejectChange()) return; Plan.IngredientShelfIds = Ids(items); Save(); }));
+    }
 
     [HideFromIl2Cpp]
     private bool RejectChange()
@@ -139,10 +157,25 @@ public sealed class TerminalConfigurable : MonoBehaviour
     [HideFromIl2Cpp]
     internal BuildableItem? FindItem(string guid)
     {
+        if (string.IsNullOrEmpty(guid)) return null;
         var items = ParentProperty.BuildableItems;
-        for (var i = 0; i < items.Count; i++) if (items[i] != null && !items[i].IsDestroyed && items[i].GUID.ToString() == guid) return items[i];
-        return null;
+        if (Time.realtimeSinceStartup >= _equipmentAt || items.Count != _equipmentCount)
+        {
+            _equipmentAt = Time.realtimeSinceStartup + 1f;
+            _equipmentCount = items.Count;
+            _equipment.Clear();
+            for (var i = 0; i < items.Count; i++)
+            {
+                var item = items[i];
+                if (item != null && !item.IsDestroyed) _equipment[item.GUID.ToString()] = item;
+            }
+        }
+        return _equipment.TryGetValue(guid, out var found) && found != null && !found.IsDestroyed && found.ParentProperty == ParentProperty ? found : null;
     }
+
+    private readonly Dictionary<string, BuildableItem> _equipment = new();
+    private float _equipmentAt;
+    private int _equipmentCount = -1;
 
     public WorldspaceUIElement CreateWorldspaceUI()
     {

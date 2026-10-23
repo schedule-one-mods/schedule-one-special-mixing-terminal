@@ -1,17 +1,24 @@
 using Il2CppScheduleOne;
 using Il2CppScheduleOne.ItemFramework;
+using Il2CppScheduleOne.EntityFramework;
+using Il2CppScheduleOne.Management;
 using Il2CppScheduleOne.ObjectScripts;
 
 namespace SpecialMixingTerminal;
 
 internal static class MixerWiring
 {
+    internal static bool SupportsOutput(BuildableItem? item)
+        => item != null && item.TryCast<ITransitEntity>() != null &&
+            (item.TryCast<PlaceableStorageEntity>() != null || item.TryCast<PackagingStation>() != null || item.TryCast<BrickPress>() != null);
+
     internal static string Validate(TerminalConfigurable owner)
     {
         var plan = owner.Plan;
         if (plan.AssignedMixerIds.Count != 4) return "Assign four mixing stations with the clipboard.";
         if (plan.Steps.Count < 1 || plan.Steps.Count > 4) return "A terminal supports one to four ingredients, each on a different mixer.";
-        if (owner.FindItem(plan.InputShelfId)?.TryCast<PlaceableStorageEntity>() == null || owner.FindItem(plan.OutputShelfId)?.TryCast<PlaceableStorageEntity>() == null) return "Assign product and output shelves.";
+        if (owner.FindItem(plan.InputShelfId)?.TryCast<PlaceableStorageEntity>() == null) return "Assign a product supply shelf.";
+        if (!SupportsOutput(owner.FindItem(plan.OutputShelfId))) return "Assign an output shelf, packaging station or brick press.";
         if (plan.InputShelfId == plan.OutputShelfId) return "Use different product and output shelves.";
         if (plan.AssignedMixerIds.Any(id => owner.FindItem(id)?.TryCast<MixingStation>() == null)) return "An assigned mixer is missing.";
         var used = new HashSet<string>();
