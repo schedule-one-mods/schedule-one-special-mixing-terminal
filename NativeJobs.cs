@@ -61,7 +61,11 @@ internal static class NativeJobs
         if (error != "") return error;
         var config = Configuration(employee)!;
         if (role == EEmployeeType.Handler)
-            return RequiredRoutes(owner.Plan).Count <= config.Cast<PackagerConfiguration>().Routes.MaxRoutes ? "" : "Not enough handler routes";
+        {
+            var handler = config.Cast<PackagerConfiguration>();
+            if (RequiredRoutes(owner.Plan).Count > handler.Routes.MaxRoutes) return "Not enough handler routes";
+            return ValidateHandlerOutput(owner, employee, handler);
+        }
         var chemist = config.Cast<ChemistConfiguration>();
         if (chemist.Stations.MaxItems < owner.Plan.AssignedMixerIds.Count) return "Not enough chemist station slots";
         foreach (var id in owner.Plan.AssignedMixerIds)
@@ -89,7 +93,7 @@ internal static class NativeJobs
         var chemist = config?.TryCast<ChemistConfiguration>();
         if (handler != null)
         {
-            if (handler.Stations.SelectedObjects.Count != 0) return "Clear this handler's assigned stations first";
+            if (handler.Stations.SelectedObjects.Count != 0 && !OwnsHandlerStations(owner, employee.GUID.ToString(), handler)) return "Clear this handler's assigned stations first";
             if (handler.Routes.Routes.Count != 0 && !OwnsRoutes(owner, employee.GUID.ToString(), handler)) return "Clear this handler's routes first";
             if (handler.Home.SelectedObject == null) return "Assign a payment locker first";
             return "";
@@ -126,13 +130,42 @@ internal static class NativeJobs
         return expected.OrderBy(x => x).SequenceEqual(actual.OrderBy(x => x));
     }
 
+    private static bool OwnsHandlerStations(TerminalConfigurable owner, string employee, PackagerConfiguration config)
+    {
+        if (!owner.Plan.NativeJobsOwned || !owner.Plan.NativeHandlerStations.TryGetValue(employee, out var expected)) return false;
+        var actual = new List<string>();
+        for (var i = 0; i < config.Stations.SelectedObjects.Count; i++) actual.Add(config.Stations.SelectedObjects[i].GUID.ToString());
+        return expected.OrderBy(x => x).SequenceEqual(actual.OrderBy(x => x));
+    }
+
+    private static string ValidateHandlerOutput(TerminalConfigurable owner, Employee employee, PackagerConfiguration config)
+    {
+        var press = owner.FindItem(owner.Plan.OutputShelfId)?.TryCast<BrickPress>();
+        if (press == null) return ""; // Packaging stations are output targets only.
+        if (config.Stations.MaxItems < 1) return "The handler has no native station capacity for the brick press.";
+        var assigned = press.stationConfiguration.AssignedPackager.SelectedNPC;
+        if (assigned != null && assigned.GUID != employee.GUID) return "The output brick press belongs to another handler. Clear its assignment first.";
+        if (!owner.Plan.NativeJobsOwned && !config.IsStationValid(press, out var reason)) return "Cannot assign output brick press: " + reason;
+        return "";
+    }
+
+    internal static bool HandlerHasStation(Employee employee, string stationId)
+    {
+        var stations = Configuration(employee)?.TryCast<PackagerConfiguration>()?.Stations.SelectedObjects;
+        if (stations == null) return false;
+        for (var i = 0; i < stations.Count; i++) if (stations[i]?.GUID.ToString() == stationId) return true;
+        return false;
+    }
+
+    internal static bool BrickPressAssigned(TerminalConfigurable owner, Employee employee)
+    {
+        var press = owner.FindItem(owner.Plan.OutputShelfId)?.TryCast<BrickPress>();
+        return press != null && press.stationConfiguration.AssignedPackager.SelectedNPC?.GUID == employee.GUID && HandlerHasStation(employee, owner.Plan.OutputShelfId);
+    }
+
     internal static List<(string Source, string Destination)> RequiredRoutes(RecipePlan plan)
     {
-        var routes = new List<(string, string)>();
-        if (plan.Steps.Count == 0) return routes;
-        routes.Add((plan.InputShelfId, plan.ResolveMixerId(0)));
-        for (var i = 0; i < plan.Steps.Count; i++) routes.Add((plan.ResolveSupplyId(i), plan.ResolveMixerId(i)));
-        return routes.Distinct().ToList();
+        return plan.RequiredRoutes();
     }
 
     internal static string Start(TerminalConfigurable owner)
@@ -157,6 +190,11 @@ internal static class NativeJobs
         var pairs = RequiredRoutes(plan);
         var mixerIds = plan.AssignedMixerIds.ToList();
         if (handlers.Sum(h => h.Config.Routes.MaxRoutes) < pairs.Count) return "This recipe exceeds the handler's native route limit.";
+        foreach (var handler in handlers)
+        {
+            var outputError = ValidateHandlerOutput(owner, handler.Employee, handler.Config);
+            if (outputError != "") return outputError;
+        }
         if (chemists.Sum(c => c.Config.Stations.MaxItems) < mixerIds.Count) return "The chemist does not have four available station slots.";
         foreach (var id in mixerIds)
         {
@@ -170,6 +208,7 @@ internal static class NativeJobs
         wiringError = MixerWiring.Apply(owner);
         if (wiringError != "") return wiringError;
         var bindings = new List<NativeRouteBinding>();
+        var handlerStationBindings = new Dictionary<string, List<string>>();
         var pairIndex = 0;
         foreach (var handler in handlers)
         {
@@ -184,6 +223,13 @@ internal static class NativeJobs
                 bindings.Add(new NativeRouteBinding { HandlerId = handler.Employee.GUID.ToString(), SourceId = pair.Source, DestinationId = pair.Destination });
             }
             handler.Config.Routes.SetList(routes, true);
+            var press = owner.FindItem(plan.OutputShelfId)?.TryCast<BrickPress>();
+            if (press != null)
+            {
+                var stations = new NativeItems(); stations.Add(press);
+                handler.Config.Stations.SetList(stations, true);
+                handlerStationBindings[handler.Employee.GUID.ToString()] = new List<string> { press.GUID.ToString() };
+            }
         }
         var stationIndex = 0;
         var stationBindings = new Dictionary<string, List<string>>();
@@ -195,9 +241,9 @@ internal static class NativeJobs
             chemist.Config.Stations.SetList(items, true);
             stationBindings[chemist.Employee.GUID.ToString()] = ids;
         }
-        plan.NativeRoutes = bindings; plan.NativeChemistStations = stationBindings; plan.NativeJobsOwned = true;
+        plan.NativeRoutes = bindings; plan.NativeChemistStations = stationBindings; plan.NativeHandlerStations = handlerStationBindings; plan.NativeJobsOwned = true;
         owner.Save();
-        MelonLogger.Msg($"[Mixing terminal {owner.Station.GUID}] START: {bindings.Count} native routes, {mixerIds.Count} stations. Jobs remain assigned until explicit Stop.");
+        MelonLogger.Msg($"[Mixing terminal {owner.Station.GUID}] START: {bindings.Count} native routes, {mixerIds.Count} chemist stations, {handlerStationBindings.Sum(pair => pair.Value.Count)} handler stations. Jobs remain assigned until explicit Stop.");
         return "Started · Native employees keep their payment lockers.";
     }
 
@@ -217,6 +263,16 @@ internal static class NativeJobs
             var employee = Employee(pair.Key); var config = employee == null ? null : Configuration(employee)?.TryCast<ChemistConfiguration>();
             if (config != null && config.Stations.SelectedObjects.Count > 0 && !OwnsStations(owner, pair.Key, config)) return "Chemist stations changed outside the terminal. Clear those assignments manually before releasing this job.";
         }
+        foreach (var pair in plan.NativeHandlerStations)
+        {
+            var employee = Employee(pair.Key); var config = employee == null ? null : Configuration(employee)?.TryCast<PackagerConfiguration>();
+            if (config != null && config.Stations.SelectedObjects.Count > 0 && !OwnsHandlerStations(owner, pair.Key, config)) return "Handler stations changed outside the terminal. Clear those assignments manually before releasing this job.";
+            foreach (var stationId in pair.Value)
+            {
+                var assigned = owner.FindItem(stationId)?.TryCast<BrickPress>()?.stationConfiguration.AssignedPackager.SelectedNPC;
+                if (assigned != null && assigned.GUID.ToString() != pair.Key) return "Brick press ownership changed outside the terminal. Clear that assignment before releasing this job.";
+            }
+        }
         foreach (var id in plan.NativeRoutes.Select(r => r.HandlerId).Distinct())
         {
             var employee = Employee(id); var config = employee == null ? null : Configuration(employee)?.TryCast<PackagerConfiguration>();
@@ -227,7 +283,12 @@ internal static class NativeJobs
             var employee = Employee(pair.Key); var config = employee == null ? null : Configuration(employee)?.TryCast<ChemistConfiguration>();
             config?.Stations.SetList(new NativeItems(), true);
         }
-        plan.NativeJobsOwned = false; plan.NativeRoutes.Clear(); plan.NativeChemistStations.Clear(); owner.Save();
+        foreach (var pair in plan.NativeHandlerStations)
+        {
+            var employee = Employee(pair.Key); var config = employee == null ? null : Configuration(employee)?.TryCast<PackagerConfiguration>();
+            config?.Stations.SetList(new NativeItems(), true);
+        }
+        plan.NativeJobsOwned = false; plan.NativeRoutes.Clear(); plan.NativeChemistStations.Clear(); plan.NativeHandlerStations.Clear(); owner.Save();
         MelonLogger.Msg($"[Mixing terminal {owner.Station.GUID}] STOP: explicit release cleared owned employee jobs.");
         return "";
     }

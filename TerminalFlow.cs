@@ -83,6 +83,9 @@ internal sealed partial class TerminalScreen
         key.Append('|').Append(_plan.InputShelfId).Append(':').Append(_plan.OutputShelfId).Append(':').Append(_plan.Steps.Count);
         for (var i = 0; i < _plan.Steps.Count; i++) key.Append('|').Append(_plan.Steps[i].IngredientId).Append(':').Append(EquipmentName(_plan.ResolveSupplyId(i)));
         key.Append('|').Append(EquipmentName(_plan.InputShelfId)).Append('|').Append(EquipmentName(_plan.OutputShelfId));
+        var outputPress = Owner.FindItem(_plan.OutputShelfId)?.TryCast<BrickPress>();
+        var pressWorker = outputPress?.stationConfiguration.AssignedPackager.SelectedNPC?.TryCast<Employee>();
+        if (outputPress != null) key.Append("|press:").Append(pressWorker?.GUID).Append(':').Append(pressWorker != null && NativeJobs.HandlerHasStation(pressWorker, _plan.OutputShelfId));
         var signature = key.ToString();
         if (_flowSignature == signature) return;
         _flowSignature = signature;
@@ -147,7 +150,12 @@ internal sealed partial class TerminalScreen
             if (!correct) Label(view, destination == null ? "No destination" : "To: " + EquipmentName(destination.GUID.ToString()), x, .975f, .23f, .025f, .012f, LinkBad);
         }
         var output = Panel("Output shelf", view, .765f, .84f, .23f, .13f, new Color(.16f, .24f, .31f));
-        Label(output.transform, "OUTPUT", .04f, .03f, .92f, .30f, .014f, style: FontStyles.Bold, alignment: TextAlignmentOptions.Center);
+        Label(output.transform, "OUTPUT", .04f, .03f, outputPress == null ? .92f : .68f, .30f, .014f, style: FontStyles.Bold, alignment: TextAlignmentOptions.Center);
+        if (outputPress != null)
+        {
+            var linked = pressWorker != null && handler != null && pressWorker.GUID == handler.GUID && NativeJobs.BrickPressAssigned(Owner, pressWorker);
+            WorkerBadge(output.rectTransform, pressWorker ?? (handlerReady ? handler : null), .80f, .04f, linked || handlerReady && pressWorker == null ? HandlerColor : LinkBad, .15f, true);
+        }
         Label(output.transform, EquipmentName(_plan.OutputShelfId, "Not assigned"), .04f, .38f, .92f, .55f, .016f, alignment: TextAlignmentOptions.Center);
     }
 

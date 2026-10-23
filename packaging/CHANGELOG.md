@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.5.4
+
+- Verify one ingredient closet can feed four different mixers: four ingredient routes plus a separate product-feed route. Deduplicate only identical source/destination pairs.
+- Automatically assign a brick-press output to the terminal's handler on Start through the native employee station list, without adding a delivery route.
+- Persist ownership of handler stations; Stop clears the terminal-owned press assignment while preserving payment lockers. Changing output through Stop/edit/Start cannot retain the previous press.
+- Reject presses assigned to another handler and station lists changed outside the terminal. Packaging-station output does not assign the handler to operate packaging stations.
+- Show the output press's actual handler badge and native assignment status in diagnostics.
+- Nine game-independent logistics/save checks passed; native brick-press operation awaits in-game acceptance.
+
 ## 0.5.3
 
 - Output can be a storage shelf, Packaging Station Mk I / Mk II, or Brick Press, using the final mixer's native destination.

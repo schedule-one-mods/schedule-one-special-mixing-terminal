@@ -18,6 +18,10 @@ The release includes one production mod DLL. No editor, item-grant tools, game b
 4. Select one handler and one chemist on **Staff & routing**. Both must belong to this property, have payment lockers, and have their previous jobs cleared using the native clipboard. Unavailable employees remain visible with a reason.
 5. Check the flow diagram, then press **Start**. A four-ingredient recipe creates five handler routes and assigns all four mixers to the chemist. The native AI performs loading, mixing and output transfers.
 
+**One ingredient closet is enough.** Assign that closet once with the clipboard; all four ingredients can resolve to it automatically. The handler still gets four ingredient routes, one from that closet to each mixer, plus the product-feed route from the product shelf. Each mixer's whitelist selects the correct ingredient. You may also explicitly choose the same closet for several steps when multiple shelves are assigned.
+
+If output is a **Brick Press**, Start also assigns that press to the same handler using the native employee station list. This uses a station slot, not an extra delivery route. The press must be unassigned or belong to this terminal's own handler. Output to a packaging station remains a delivery destination only; automatic operation is supported only for the brick press.
+
 The screen uses the game's native computer camera transition and controls. **Escape** closes an open selector before closing the computer. Closing the computer saves the recipe and applies valid mixer filters and destinations; it does not start employees. Normal computer interaction is disabled while the clipboard is equipped.
 
 ## Read the flow diagram
@@ -32,6 +36,8 @@ The employee picker distinguishes selected staff in blue, available staff in gre
 
 **Stop** releases only the terminal's employee routes and station assignments. Payment lockers and passive recipe wiring are retained. If jobs were changed externally, the terminal refuses to erase mismatched assignments and explains the conflict. Recipe and clipboard connections are locked while terminal jobs are active.
 
+Stop also removes the terminal-owned brick-press assignment. To change output, Stop first, change the clipboard Output field, then Start: storage/packaging output leaves the handler without a press assignment; choosing a new brick press assigns only the new press. Existing running jobs from an older version should be stopped and started once to apply the new automatic press assignment.
+
 With jobs stopped and the computer closed, use empty hands and the native hold-right-click action to pick up the terminal. Chain terminals by assigning the first terminal's output shelf as the next terminal's product supply. Each terminal requires its own four mixers and staff pair.
 
 Recipes are saved per terminal under the active save's `ModData/SpecialMixingTerminal` folder. Back up saves before adding or removing mods. Removing the DLL does not restore mixer settings or employee jobs; stop and dismantle a setup first if you want to remove it.
@@ -41,6 +47,8 @@ Recipes are saved per terminal under the active save's `ModData/SpecialMixingTer
 Native integration checks on isolated save copies verified threshold 20, ingredient whitelists, chained destinations, five handler routes, four chemist station assignments, Stop releasing jobs while preserving payment lockers, and saved mixer settings after restart. The UI was inspected during development. A complete production cycle and clean installation through Mod Manager remain pending user acceptance. These checks do not guarantee compatibility with other game versions or mods.
 
 Version 0.5.3 removes scene searches from the per-frame update and laundering refresh hooks, repeated terminal re-registration, and employee scene searches. Terminal/interface caches are maintained on placement, pickup and scene unload. Clipboard state updates only on changes. Equipment/employee lookup caches refresh on demand, and closed computer screens do no diagnostic work. Clipboard refresh callbacks are released with their panels. See [PERFORMANCE.md](PERFORMANCE.md) for the source audit and remaining measurement work. No measured FPS improvement is claimed yet. New packaging-output delivery and the inventory icon still need in-game acceptance.
+
+Version 0.5.4's game-independent logistics checks verify shared-closet resolution, five delivery routes, distinct destinations, repeated ingredients, older-plan compatibility and persisted handler-station ownership. These checks do not exercise native brick-press operation; an in-game production cycle remains pending acceptance.
 
 The original 256px terminal/flask icon is embedded in the production DLL and reused by the game's item definition. The release thumbnail is the same artwork; no external asset bundle is required.
 

@@ -28,6 +28,7 @@ public sealed class RecipePlan
     public List<IngredientStep> Steps { get; set; } = [];
     public List<NativeRouteBinding> NativeRoutes { get; set; } = [];
     public Dictionary<string, List<string>> NativeChemistStations { get; set; } = [];
+    public Dictionary<string, List<string>> NativeHandlerStations { get; set; } = [];
     public bool NativeJobsOwned { get; set; }
     public int NativeStep { get; set; }
     public int NativePhase { get; set; }
@@ -43,6 +44,7 @@ public sealed class RecipePlan
         IngredientShelfIds ??= [];
         NativeRoutes ??= [];
         NativeChemistStations ??= [];
+        NativeHandlerStations ??= [];
         AssignedMixerIds = AssignedMixerIds.Where(id => !string.IsNullOrEmpty(id)).Distinct().Take(EquipmentLimit).ToList();
         IngredientShelfIds = IngredientShelfIds.Where(id => !string.IsNullOrEmpty(id)).Distinct().Take(EquipmentLimit).ToList();
         if (AssignedHandlerIds.Count == 0 && !string.IsNullOrEmpty(AssignedHandlerId)) AssignedHandlerIds.Add(AssignedHandlerId);
@@ -67,6 +69,17 @@ public sealed class RecipePlan
         if (stepIndex < 0 || stepIndex >= Steps.Count) return "";
         var requested = Steps[stepIndex].SupplyShelfId;
         return IngredientShelfIds.Contains(requested) ? requested : IngredientShelfIds.Count == 1 ? IngredientShelfIds[0] : "";
+    }
+
+    public List<(string Source, string Destination)> RequiredRoutes()
+    {
+        var routes = new List<(string, string)>();
+        if (Steps.Count == 0) return routes;
+        routes.Add((InputShelfId, ResolveMixerId(0)));
+        // Sharing a shelf is allowed. Deduplicate complete pairs, never sources:
+        // one closet feeding four mixers still creates four ingredient routes.
+        for (var i = 0; i < Steps.Count; i++) routes.Add((ResolveSupplyId(i), ResolveMixerId(i)));
+        return routes.Distinct().ToList();
     }
 
     public static RecipePlan Load(string path)

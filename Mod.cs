@@ -16,7 +16,7 @@ using Il2CppScheduleOne.Management;
 using Il2CppScheduleOne.Tools;
 using Il2CppInterop.Runtime.Injection;
 
-[assembly: MelonInfo(typeof(SpecialMixingTerminal.Mod), "Special Mixing Terminal", "0.5.3", "Dekode1859")]
+[assembly: MelonInfo(typeof(SpecialMixingTerminal.Mod), "Special Mixing Terminal", "0.5.4", "Dekode1859")]
 [assembly: MelonGame("TVGS", "Schedule I")]
 [assembly: MelonPlatformDomain(MelonPlatformDomainAttribute.CompatibleDomains.IL2CPP)]
 

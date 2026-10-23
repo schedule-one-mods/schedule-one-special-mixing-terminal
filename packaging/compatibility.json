@@ -4,7 +4,7 @@
   "scripting_backend": "IL2CPP",
   "platforms_tested": ["Windows x64"],
   "loader": {"name": "MelonLoader", "versions_tested": ["0.7.3"]},
-  "single_player_testing": "Prior native configuration and Start/Stop checks on isolated saves; 0.5.3 packaging-output delivery and icon rendering pending acceptance",
+  "single_player_testing": "Prior native configuration checks; 0.5.4 shared-closet route and station-ownership persistence checks passed. Native automatic brick-press operation pending acceptance",
   "performance_testing": "0.5.3 source audit removed hot-path scene scans and repeated registration; measured FPS comparison pending",
   "co_op_client_testing": "Unverified; single-player integration only",
   "mod_manager_installation_testing": "Pending user acceptance from the published release",

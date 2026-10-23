@@ -395,8 +395,12 @@ internal sealed partial class TerminalScreen
                 var routes = NativeJobs.HandlerRoutes(employee);
                 count.text = $"{routes.Used}/{routes.Limit}\nroutes";
                 var ready = NativeJobs.Ready(Owner, role);
-                detail.text = _plan.NativeJobsOwned ? "Native routes assigned" : ready == "" ? $"{NativeJobs.RequiredRoutes(_plan).Count} routes ready" : ready;
+                var press = Owner.FindItem(_plan.OutputShelfId)?.TryCast<BrickPress>();
+                var pressAssigned = press == null || NativeJobs.BrickPressAssigned(Owner, employee);
+                detail.text = _plan.NativeJobsOwned ? press == null ? "Native routes assigned" : pressAssigned ? "Routes + press assigned" : "Press not assigned"
+                    : ready == "" ? $"{NativeJobs.RequiredRoutes(_plan).Count} routes ready" + (press == null ? "" : " + press") : ready;
                 detail.color = ready == "" ? HandlerColor : LinkBad;
+                if (_plan.NativeJobsOwned && !pressAssigned) detail.color = LinkBad;
             }
             _staffDiagnostics.Add(Refresh); Refresh();
         }
