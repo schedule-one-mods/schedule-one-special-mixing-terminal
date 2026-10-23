@@ -203,6 +203,8 @@ internal static class NativeJobs
             if (assigned != null && !plan.NativeChemistStations.Values.Any(ids => ids.Contains(id))) return "A mixer already belongs to another chemist. Clear that assignment first.";
             if (!plan.NativeJobsOwned && (station.CurrentMixOperation != null || station.ProductSlot.Quantity > 0 || station.MixerSlot.Quantity > 0 || station.OutputSlot.Quantity > 0)) return "Empty the assigned mixers before starting a new terminal job.";
         }
+        var acceptanceError = MixAutomation.Prepare(owner, out var policies, out var baseProductId);
+        if (acceptanceError != "") return acceptanceError;
         // Validate everything before changing native employee fields. Home/locker
         // fields are never reset or written by this mod.
         wiringError = MixerWiring.Apply(owner);
@@ -241,7 +243,9 @@ internal static class NativeJobs
             chemist.Config.Stations.SetList(items, true);
             stationBindings[chemist.Employee.GUID.ToString()] = ids;
         }
-        plan.NativeRoutes = bindings; plan.NativeChemistStations = stationBindings; plan.NativeHandlerStations = handlerStationBindings; plan.NativeJobsOwned = true;
+        plan.NativeRoutes = bindings; plan.NativeChemistStations = stationBindings; plan.NativeHandlerStations = handlerStationBindings; plan.NativeMixPolicies = policies; plan.NativeJobsOwned = true;
+        plan.NativeBaseProductId = baseProductId;
+        MixAutomation.Clear(owner);
         owner.Save();
         MelonLogger.Msg($"[Mixing terminal {owner.Station.GUID}] START: {bindings.Count} native routes, {mixerIds.Count} chemist stations, {handlerStationBindings.Sum(pair => pair.Value.Count)} handler stations. Jobs remain assigned until explicit Stop.");
         return "Started · Native employees keep their payment lockers.";
@@ -288,7 +292,7 @@ internal static class NativeJobs
             var employee = Employee(pair.Key); var config = employee == null ? null : Configuration(employee)?.TryCast<PackagerConfiguration>();
             config?.Stations.SetList(new NativeItems(), true);
         }
-        plan.NativeJobsOwned = false; plan.NativeRoutes.Clear(); plan.NativeChemistStations.Clear(); plan.NativeHandlerStations.Clear(); owner.Save();
+        plan.NativeJobsOwned = false; plan.NativeRoutes.Clear(); plan.NativeChemistStations.Clear(); plan.NativeHandlerStations.Clear(); plan.NativeMixPolicies.Clear(); plan.NativeBaseProductId = ""; MixAutomation.Clear(owner); owner.Save();
         MelonLogger.Msg($"[Mixing terminal {owner.Station.GUID}] STOP: explicit release cleared owned employee jobs.");
         return "";
     }

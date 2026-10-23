@@ -38,6 +38,7 @@ internal sealed partial class TerminalScreen
     private readonly TextMeshProUGUI _status;
     private readonly Button _recipeTab;
     private readonly Button _teamTab;
+    private readonly Button _libraryTab;
     private readonly Button _startButton;
     private readonly Button _stopButton;
     private string _lastWiringError = "";
@@ -50,6 +51,8 @@ internal sealed partial class TerminalScreen
     private RectTransform? _picker;
     private RectTransform? _dropdown;
     private bool _teamPage;
+    private bool _libraryPage;
+    private string _selectedPreset = "";
     private bool _dirty;
     private List<Choice>? _ingredientChoices;
     private TerminalConfigurable Owner => _owner;
@@ -81,17 +84,13 @@ internal sealed partial class TerminalScreen
         Label(_root, station.ParentProperty?.PropertyName ?? "Property", .67f, .018f, .24f, .045f, .018f, Color.white, alignment: TextAlignmentOptions.Right);
         Button(_root, "×", .94f, .012f, .045f, .06f, Close);
 
-        _recipeTab = Button(_root, "Recipe", .025f, .102f, .17f, .056f, () => { _teamPage = false; BuildPage(); });
-        _teamTab = Button(_root, "Staff & routing", .205f, .102f, .28f, .056f, () => { _teamPage = true; BuildPage(); });
+        _recipeTab = Button(_root, "Recipe", .025f, .102f, .15f, .056f, () => { _libraryPage = false; _teamPage = false; BuildPage(); });
+        _teamTab = Button(_root, "Staff & routing", .185f, .102f, .23f, .056f, () => { _libraryPage = false; _teamPage = true; BuildPage(); });
+        _libraryTab = Button(_root, "Saved mixes", .425f, .102f, .19f, .056f, () => { _libraryPage = true; _teamPage = false; _selectedPreset = ""; BuildPage(); });
         _body = Rect("Workspace", _root);
         Place(_body, .025f, .18f, .95f, .71f);
         _status = Label(_root, "", .03f, .924f, .71f, .05f, .017f);
-        _startButton = Button(_root, "Start", .72f, .102f, .12f, .056f, () =>
-        {
-            Save();
-            if (_lastWiringError != "") return;
-            var message = NativeJobs.Start(Owner); BuildPage(); _status.text = message;
-        });
+        _startButton = Button(_root, "Start", .72f, .102f, .12f, .056f, TryStart);
         _stopButton = Button(_root, "Stop", .855f, .102f, .12f, .056f, () =>
         {
             var error = NativeJobs.Release(Owner); BuildPage();
@@ -125,6 +124,12 @@ internal sealed partial class TerminalScreen
     internal void Tick()
     {
         if (!_native.IsOpen) return;
+        var automationError = MixAutomation.Error(Owner);
+        if (automationError != _reportedAutomationError)
+        {
+            _reportedAutomationError = automationError;
+            if (automationError != "") _status.text = "Mix acceptance paused · " + automationError;
+        }
         if (_teamPage && _liveFlow != null && Time.realtimeSinceStartup >= _nextFlow)
         {
             _nextFlow = Time.realtimeSinceStartup + .5f;
@@ -194,10 +199,11 @@ internal sealed partial class TerminalScreen
         _liveFlow = null; _flowSignature = "";
         _staffDiagnostics.Clear();
         Clear(_body);
-        _recipeTab.interactable = _teamPage;
-        _teamTab.interactable = !_teamPage;
-        if (_teamPage) BuildTeam(); else BuildRecipe();
-        _startButton.interactable = !_plan.NativeJobsOwned;
+        _recipeTab.interactable = _teamPage || _libraryPage;
+        _teamTab.interactable = !_teamPage || _libraryPage;
+        _libraryTab.interactable = !_libraryPage;
+        if (_libraryPage) BuildLibrary(); else if (_teamPage) BuildTeam(); else BuildRecipe();
+        _startButton.interactable = !_plan.NativeJobsOwned && !_libraryPage;
         _stopButton.interactable = _plan.NativeJobsOwned;
         ResetAllScrolls();
         if (!_dirty) _status.text = _plan.NativeJobsOwned ? NativeJobs.Status(Owner) : "Ready checks do not start employees. Press Start to apply jobs.";
@@ -205,18 +211,20 @@ internal sealed partial class TerminalScreen
 
     private void BuildRecipe()
     {
+        Button(_body, "Save as new", .80f, 0, .20f, .085f, ShowSavePreset);
         if (_plan.NativeJobsOwned)
         {
-            Label(_body, "NATIVE EMPLOYEE JOBS", 0, .02f, 1, .09f, .023f, style: FontStyles.Bold);
+            Label(_body, "NATIVE EMPLOYEE JOBS", 0, .02f, .76f, .09f, .023f, style: FontStyles.Bold);
             Label(_body, NativeJobs.Status(Owner), 0, .16f, 1, .2f, .021f);
             Label(_body, "Release this terminal's jobs on the Staff & routing tab before editing the recipe or clipboard connections. Payment lockers are preserved.", 0, .40f, 1, .25f, .020f);
             return;
         }
-        Input(_body, _plan.Name, "Recipe name", 0, 0, .65f, .10f,
+        Input(_body, _plan.Name, "Recipe name", 0, 0, .46f, .10f,
             value => { _plan.Name = string.IsNullOrWhiteSpace(value) ? "Special mix" : value.Trim(); Changed(); });
-        Label(_body, $"{_plan.AssignedMixerIds.Count} mixers assigned", .69f, .01f, .31f, .08f, .019f, style: FontStyles.Bold);
-        var mapping = "1–4 mixers · Threshold 20 · One distinct mixer per ingredient.";
-        Label(_body, mapping, 0, .12f, 1, .065f, .017f);
+        Button(_body, "Base · " + ItemName(_plan.BaseProductId, "Auto"), .48f, 0, .30f, .085f, ShowBaseProduct);
+        var mapping = $"{_plan.AssignedMixerIds.Count}/4 mixers · Threshold 20 · One mixer per ingredient";
+        Label(_body, mapping, 0, .12f, .75f, .065f, .017f);
+        Button(_body, "Naming", .80f, .115f, .20f, .065f, () => ShowNaming(false));
 
         Label(_body, $"MIXING ORDER · {_plan.Steps.Count} ingredients", 0, .21f, .70f, .06f, .020f, style: FontStyles.Bold);
         var addIngredient = Button(_body, "+ Add ingredient", .73f, .205f, .27f, .065f,

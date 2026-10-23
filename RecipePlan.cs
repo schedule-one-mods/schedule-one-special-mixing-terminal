@@ -23,12 +23,18 @@ public sealed class RecipePlan
     public List<string> AssignedMixerIds { get; set; } = [];
     public List<string> IngredientShelfIds { get; set; } = [];
     public string BaseProductId { get; set; } = "";
+    public bool AutoAcceptMixes { get; set; } = true;
+    public string FinalProductName { get; set; } = "";
+    public int FirstStageNumber { get; set; } = 1;
+    public int FinalStageNumber { get; set; }
     public string InputShelfId { get; set; } = "";
     public string OutputShelfId { get; set; } = "";
     public List<IngredientStep> Steps { get; set; } = [];
     public List<NativeRouteBinding> NativeRoutes { get; set; } = [];
     public Dictionary<string, List<string>> NativeChemistStations { get; set; } = [];
     public Dictionary<string, List<string>> NativeHandlerStations { get; set; } = [];
+    public List<MixStagePolicy> NativeMixPolicies { get; set; } = [];
+    public string NativeBaseProductId { get; set; } = "";
     public bool NativeJobsOwned { get; set; }
     public int NativeStep { get; set; }
     public int NativePhase { get; set; }
@@ -45,6 +51,10 @@ public sealed class RecipePlan
         NativeRoutes ??= [];
         NativeChemistStations ??= [];
         NativeHandlerStations ??= [];
+        NativeMixPolicies ??= [];
+        FinalProductName = (FinalProductName ?? "").Trim();
+        FirstStageNumber = Math.Clamp(FirstStageNumber, 1, 9999);
+        FinalStageNumber = Math.Clamp(FinalStageNumber, 0, 9999);
         AssignedMixerIds = AssignedMixerIds.Where(id => !string.IsNullOrEmpty(id)).Distinct().Take(EquipmentLimit).ToList();
         IngredientShelfIds = IngredientShelfIds.Where(id => !string.IsNullOrEmpty(id)).Distinct().Take(EquipmentLimit).ToList();
         if (AssignedHandlerIds.Count == 0 && !string.IsNullOrEmpty(AssignedHandlerId)) AssignedHandlerIds.Add(AssignedHandlerId);
@@ -128,4 +138,15 @@ public sealed class NativeRouteBinding
     public string HandlerId { get; set; } = "";
     public string SourceId { get; set; } = "";
     public string DestinationId { get; set; } = "";
+}
+
+public sealed class MixStagePolicy
+{
+    public string MixerId { get; set; } = "";
+    public string IngredientId { get; set; } = "";
+    public string ProductName { get; set; } = "";
+    public string KnownProductId { get; set; } = "";
+    public int Stage { get; set; }
+    public int DrugType { get; set; }
+    public List<string> Effects { get; set; } = [];
 }

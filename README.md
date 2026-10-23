@@ -24,6 +24,24 @@ If output is a **Brick Press**, Start also assigns that press to the same handle
 
 The screen uses the game's native computer camera transition and controls. **Escape** closes an open selector before closing the computer. Closing the computer saves the recipe and applies valid mixer filters and destinations; it does not start employees. Normal computer interaction is disabled while the clipboard is equipped.
 
+## Automatic acceptance and product names
+
+Before Start, the terminal previews each stage with the game's effect calculator and looks for existing products. Choose a **Base product** on the first terminal, or leave Auto selected with exactly one product type stocked on its product shelf.
+
+If any result is unknown, Start asks once for a final product name. For a twelve-step chain named Megaslime, new intermediate products are named `1 Megaslime` through `11 Megaslime`; the final product is `Megaslime`. Existing products keep their names and still count toward the step number: after four known stages, the next new product is `5 Megaslime`.
+
+Connect terminals through unique handoff shelves to resolve the whole chain and final stage automatically. Start each terminal separately with its own employees. **Naming** also provides first/final step overrides for partial chains, plus an auto-accept toggle. Stop every connected terminal before changing naming settings. Product registration happens only when a terminal-owned mix completes, using native naming and output methods. Manual mixers are unaffected. Unexpected actual effects or a conflicting name stop automatic acceptance and display an error; employee jobs remain assigned until Stop.
+
+After upgrading an already-running setup, Stop and Start its terminals once to capture the acceptance policies. Products already registered in the game remain registered after Stop, deleting a saved recipe or removing this mod. Native multiplayer acceptance is unverified.
+
+## Save and switch recipes
+
+Use **Save as new** on the Recipe page to name a new saved copy. It captures the entire connected chain, base product, ingredients in order, mixer/supply positions, naming settings and an output/effect preview. The **Saved mixes** page provides search, a read-only detail view, **Load into setup**, and **Delete saved copy**. Loading does not start employees. Edit the loaded recipe and save another copy to keep both versions.
+
+Stop all terminals in the chain before loading. The target must have the same number of connected terminals, enough distinct mixers and compatible supply selections. Recipes map to the current clipboard assignment order; one ingredient shelf can supply every step. Physical shelf connections, employees and payment lockers remain assigned to the current setup. A recipe contains no employee IDs, equipment GUIDs or native job leases. Check the routing diagram before Start after loading onto different equipment.
+
+The catalog is local to the active save at `ModData/SpecialMixingTerminal/library.json` and survives native game saves. Deleting a saved copy leaves the active setup and native product discoveries intact. A damaged or unsupported catalog is reported and preserved instead of silently replaced. Saved output/effect previews are snapshots from the time the recipe was saved.
+
 ## Read the flow diagram
 
 Ingredient supply shelves appear above their mixers. Product supply feeds the first mixer from below; the final output destination is below the rightmost mixer. The mixer chain runs left to right. Blue worker badges identify handlers; yellow badges inside mixer headers identify chemists. The selected handler shows its actual used/native route capacity and the pending recipe's route count. Packaging supplies and downstream packaging jobs still use the game's normal setup.
@@ -55,6 +73,8 @@ The original 256px terminal/flask icon is embedded in the production DLL and reu
 One to four physically assigned mixers are supported. Each ingredient needs a different mixer, so the recipe cannot have more steps than its assigned mixer pool. Extra assigned mixers remain assigned to the chemist with an empty ingredient whitelist; they do not add recipe stages. A single mixer supports a single ingredient step and sends its output directly to the chosen destination. Repeated use of a mixer for multiple steps is not supported. Native employee schedules, payment, inventory and pathfinding still apply. Start currently requires empty assigned mixers.
 
 Version 0.5.5 passed 30 game-independent checks, including layouts and destinations for one through four mixers, insufficient/duplicate station rejection, and 4+1/4+2/4+3 terminal chains. These checks do not replace native gameplay acceptance.
+
+Version 0.6.0 passed a Release build with zero warnings/errors and 61 game-independent checks covering naming, twelve-step chain discovery, forks/cycles, legacy plans, catalog isolation/serialization, atomic restore failures and deletion. The new library UI and native automatic naming have not been exercised in a running game. No game launch, save edit or live deployment was performed for this update.
 
 ## Build and release
 

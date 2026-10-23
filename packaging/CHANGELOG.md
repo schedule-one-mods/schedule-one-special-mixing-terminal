@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.6.0
+
+- Add a searchable Saved mixes page with product/effect previews, read-only recipe details, loading and deletion. Save as new always creates an independent recipe.
+- Save the whole connected terminal chain using logical mixer/supply positions. Loading retains the current physical equipment and staff, refuses running chains, and validates every segment before changing any recipe.
+- Preview native mixing effects before Start. Ask once for an unknown chain's final name; new intermediate products use the global step number and the final product uses the name alone. Known products retain their existing names.
+- Resolve numbering across connected terminals, including known stages. Optional first/final step numbers support partial chains. Ambiguous or cyclic shelf connections are rejected.
+- Accept results through the game's native naming/output path only for terminal-owned completed batches. Verify actual ingredient, drug type and effects against the Start snapshot; report mismatches or occupied names instead of renaming unrelated products.
+- Add a base-product selector and optional auto-accept toggle. Persist acceptance policies and the saved-recipe catalog with the active save; legacy plans load with compatible defaults.
+- Use completion callbacks rather than new per-frame scene scans. Include only the production mod in the package.
+- Release build and 61 game-independent checks passed. New native naming, recipe-library UI and complete production cycles await gameplay acceptance; the running game was not opened, closed, modified or redeployed during this update.
+
 ## 0.5.5
 
 - Remove the exact-four-station requirement. Each terminal accepts one through four distinct mixers and one through four ingredient steps, with one mixer per step.

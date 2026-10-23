@@ -16,7 +16,7 @@ using Il2CppScheduleOne.Management;
 using Il2CppScheduleOne.Tools;
 using Il2CppInterop.Runtime.Injection;
 
-[assembly: MelonInfo(typeof(SpecialMixingTerminal.Mod), "Special Mixing Terminal", "0.5.5", "Dekode1859")]
+[assembly: MelonInfo(typeof(SpecialMixingTerminal.Mod), "Special Mixing Terminal", "0.6.0", "Dekode1859")]
 [assembly: MelonGame("TVGS", "Schedule I")]
 [assembly: MelonPlatformDomain(MelonPlatformDomainAttribute.CompatibleDomains.IL2CPP)]
 
@@ -68,6 +68,10 @@ public sealed class Mod : MelonMod
             prefix: new HarmonyMethod(typeof(TerminalClipboard), nameof(TerminalClipboard.BeforeGetTypeName)));
         HarmonyInstance.Patch(AccessTools.Method(typeof(EntityConfiguration), nameof(EntityConfiguration.ReplicateField)),
             prefix: new HarmonyMethod(typeof(TerminalClipboard), nameof(TerminalClipboard.BeforeReplicateField)));
+        HarmonyInstance.Patch(AccessTools.Method(typeof(MixingStation), nameof(MixingStation.MixingDone)),
+            prefix: new HarmonyMethod(typeof(MixAutomation), nameof(MixAutomation.BeforeMixingDone)));
+        HarmonyInstance.Patch(AccessTools.Method(typeof(MixingStation), nameof(MixingStation.RpcLogic___TryCreateOutputItems_2166136261)),
+            prefix: new HarmonyMethod(typeof(MixAutomation), nameof(MixAutomation.BeforeCreateOutput)));
     }
 
     private static bool BeforeNativeLaunderingRefresh(LaunderingInterface __instance)
@@ -293,6 +297,7 @@ public sealed class Mod : MelonMod
         _terminals.Clear(); _interfaces.Clear();
         _discovered = false; _clipboardState = null;
         NativeJobs.Clear();
+        MixAutomation.Clear();
         if (_saveManager != null)
         {
             if (_saving != null) _saveManager.onSaveStart.RemoveListener(_saving);
@@ -309,6 +314,8 @@ public sealed class Mod : MelonMod
         foreach (var owner in _terminals.Values)
             if (owner.Plan != null && !owner.IsDestroyed)
                 _saveSnapshot[owner.Path] = System.Text.Json.JsonSerializer.Serialize(owner.Plan, new System.Text.Json.JsonSerializerOptions { WriteIndented = true });
+        var library = Path.Combine(Singleton<LoadManager>.Instance.LoadedGameFolderPath, "ModData", "SpecialMixingTerminal", "library.json");
+        if (File.Exists(library)) _saveSnapshot[library] = File.ReadAllText(library);
     }
 
     private void RestoreRecipesAfterSave()

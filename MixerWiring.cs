@@ -17,6 +17,7 @@ internal static class MixerWiring
         var plan = owner.Plan;
         var layoutError = plan.ValidateMixerLayout();
         if (layoutError != "") return layoutError;
+        if (plan.BaseProductId != "" && Registry.GetItem(plan.BaseProductId)?.TryCast<Il2CppScheduleOne.Product.ProductDefinition>() == null) return "Choose an available base product.";
         if (owner.FindItem(plan.InputShelfId)?.TryCast<PlaceableStorageEntity>() == null) return "Assign a product supply shelf.";
         if (!SupportsOutput(owner.FindItem(plan.OutputShelfId))) return "Assign an output shelf, packaging station or brick press.";
         if (plan.InputShelfId == plan.OutputShelfId) return "Use different product and output shelves.";
@@ -44,6 +45,11 @@ internal static class MixerWiring
             var filter = new SlotFilter { Type = SlotFilter.EType.Whitelist };
             if (index >= 0) filter.ItemIDs.Add(plan.Steps[index].IngredientId);
             station.SetSlotFilter(null!, station.MixerSlot.SlotIndex, filter);
+            var upstream = Mod.Terminals.Any(t => t != owner && !t.IsDestroyed && t.Plan.OutputShelfId != "" && t.Plan.OutputShelfId == plan.InputShelfId);
+            var productFilter = new SlotFilter { Type = index == 0 && !upstream && plan.BaseProductId != "" ? SlotFilter.EType.Whitelist : SlotFilter.EType.Blacklist };
+            if (productFilter.Type == SlotFilter.EType.Whitelist)
+                productFilter.ItemIDs.Add(plan.BaseProductId);
+            station.SetSlotFilter(null!, station.ProductSlot.SlotIndex, productFilter);
             var destination = index < 0 ? null : owner.FindItem(plan.ResolveDestinationId(index));
             station.stationConfiguration.Destination.SetObject(destination!, true);
         }

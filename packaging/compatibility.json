@@ -1,10 +1,19 @@
 {
   "game": "Schedule I",
-  "game_versions_tested": ["0.4.7f5"],
+  "game_versions_tested": [
+    "0.4.7f5"
+  ],
   "scripting_backend": "IL2CPP",
-  "platforms_tested": ["Windows x64"],
-  "loader": {"name": "MelonLoader", "versions_tested": ["0.7.3"]},
-  "single_player_testing": "Prior native configuration checks; 0.5.5 passed 30 game-independent logistics checks including 1-4 mixers and chained 4+1/4+2/4+3 stages. Native variable-size setups and brick-press operation pending acceptance",
+  "platforms_tested": [
+    "Windows x64"
+  ],
+  "loader": {
+    "name": "MelonLoader",
+    "versions_tested": [
+      "0.7.3"
+    ]
+  },
+  "single_player_testing": "Prior native configuration checks; 0.6.0 Release build and 61 game-independent checks passed (naming, 12-stage chain graphs, saved recipe isolation/restore/serialization). Native automatic acceptance, saved-library UI, variable-size production and brick-press operation pending gameplay acceptance; no live game deployment/testing for this update.",
   "performance_testing": "0.5.3 source audit removed hot-path scene scans and repeated registration; measured FPS comparison pending",
   "co_op_client_testing": "Unverified; single-player integration only",
   "mod_manager_installation_testing": "Pending user acceptance from the published release",
