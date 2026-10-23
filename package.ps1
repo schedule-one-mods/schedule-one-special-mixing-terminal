@@ -1,6 +1,6 @@
-param([string]$GameDir = 'Q:\Games\Schedule I')
+param([string]$GameDir = 'Q:\Games\Schedule I', [string]$Dotnet, [string]$OutputDirectory = (Join-Path $PSScriptRoot 'artifacts/releases'))
 $ErrorActionPreference = 'Stop'
-& (Join-Path $PSScriptRoot 'build.ps1') -GameDir $GameDir
+& (Join-Path $PSScriptRoot 'build.ps1') -GameDir $GameDir -Dotnet $Dotnet
 $dll = Join-Path $PSScriptRoot 'artifacts/SpecialMixingTerminal.dll'
 Add-Type -Path (Join-Path $GameDir 'MelonLoader/net6/Mono.Cecil.dll')
 $assembly = [Mono.Cecil.AssemblyDefinition]::ReadAssembly($dll)
@@ -14,7 +14,7 @@ try {
     if ($assembly.MainModule.AssemblyReferences.Name -match 'DevTools') { throw 'Production references development assembly.' }
     if ($assembly.MainModule.Resources.Name -notcontains 'SpecialMixingTerminal.TerminalIcon.png') { throw 'Embedded inventory icon is missing.' }
 } finally { $assembly.Dispose() }
-$project = [xml](Get-Content -LiteralPath (Join-Path $PSScriptRoot 'SpecialMixingTerminal.csproj') -Raw)
+$project = [xml](Get-Content -LiteralPath (Join-Path $PSScriptRoot 'Directory.Build.props') -Raw)
 if ($name -ne 'Special Mixing Terminal' -or $author -ne 'Dekode1859' -or $version -notmatch '^\d+\.\d+\.\d+$' -or $project.Project.PropertyGroup.Version -ne $version) {
     throw 'Compiled mod identity/version does not match the project.'
 }
@@ -32,7 +32,7 @@ $manifest = [ordered]@{
     dependencies = @('LavaGang-MelonLoader-0.7.3')
 }
 $manifest | ConvertTo-Json -Depth 5 | Set-Content -LiteralPath (Join-Path $stage 'manifest.json') -Encoding utf8
-$release = Join-Path $PSScriptRoot 'artifacts/releases'
+$release = $OutputDirectory
 New-Item -ItemType Directory -Path $release -Force | Out-Null
 $zip = Join-Path $release "SpecialMixingTerminal-$version-IL2CPP.zip"
 if (Test-Path -LiteralPath $zip) { throw 'Package exists. Published assets are immutable; use a new version or a fresh artifact directory.' }

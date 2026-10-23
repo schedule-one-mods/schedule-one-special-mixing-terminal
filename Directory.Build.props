@@ -1,0 +1,6 @@
+<Project>
+  <PropertyGroup>
+    <!-- The only release version to edit. Assembly, MelonInfo and ZIP use this. -->
+    <Version>0.6.0</Version>
+  </PropertyGroup>
+</Project>

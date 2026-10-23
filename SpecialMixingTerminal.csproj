@@ -5,7 +5,6 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <AssemblyName>SpecialMixingTerminal</AssemblyName>
-    <Version>0.6.0</Version>
     <GameDir Condition="'$(GameDir)' == ''">Q:\Games\Schedule I</GameDir>
     <EnableDynamicLoading>true</EnableDynamicLoading>
   </PropertyGroup>

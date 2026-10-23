@@ -1,0 +1,11 @@
+#!/bin/sh
+# This hook is enabled only by scripts/install-release-hook.ps1 in this clone.
+if [ "${SCHEDULE_ONE_PUBLISH_ACTIVE:-}" = "1" ]; then exit 0; fi
+powershell="$(git config --local --get scheduleone.pwsh)"
+if [ -z "$powershell" ]; then powershell=pwsh; fi
+"$powershell" -NoLogo -NoProfile -File ./publish.ps1 -FromHook
+result=$?
+if [ "$result" -ne 0 ]; then
+  echo "Release failed after the commit was created. Your commit is intact; fix the reported error and rerun ./publish.ps1."
+fi
+exit "$result"

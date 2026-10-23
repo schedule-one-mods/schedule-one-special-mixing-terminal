@@ -86,3 +86,7 @@ Install a .NET SDK supporting `net6.0`, then run:
 ```
 
 Build references come from the local game's MelonLoader IL2CPP assemblies and are never shipped. See [RELEASING.md](RELEASING.md) for release and registry steps, [CHANGELOG](packaging/CHANGELOG.md) for changes, and [LICENSE](LICENSE) for the MIT license.
+
+## Automated local releases
+
+Edit the version once in `Directory.Build.props`, update the changelog, then use `publish.ps1` to build, push and publish. An optional post-commit hook publishes version increases on `main`. See [PUBLISHING.md](PUBLISHING.md).

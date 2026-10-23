@@ -1,7 +1,8 @@
-param([string]$GameDir = 'Q:\Games\Schedule I', [switch]$Deploy)
+param([string]$GameDir = 'Q:\Games\Schedule I', [switch]$Deploy, [string]$Dotnet)
 $ErrorActionPreference = 'Stop'
 $sdk = Join-Path (Split-Path -Parent $PSScriptRoot) 'tools\dotnet\dotnet.exe'
 if (!(Test-Path -LiteralPath $sdk)) { $sdk = 'dotnet' }
+if ($Dotnet) { $sdk = $Dotnet }
 & $sdk build (Join-Path $PSScriptRoot 'SpecialMixingTerminal.csproj') -c Release --nologo -v:q "-p:GameDir=$GameDir" -p:NoWarn=MSB3277
 if ($LASTEXITCODE -ne 0) { throw 'Special Mixing Terminal build failed.' }
 $output = Join-Path $PSScriptRoot 'artifacts'

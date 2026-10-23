@@ -1,0 +1,7 @@
+{
+  "repository": "schedule-one-mods/schedule-one-special-mixing-terminal",
+  "displayName": "Special Mixing Terminal",
+  "packageName": "SpecialMixingTerminal",
+  "changelog": "packaging/CHANGELOG.md",
+  "files": ["manifest.json", "compatibility.json", "README.md", "CHANGELOG.md", "THIRD-PARTY-NOTICES.md", "icon.png", "Mods/SpecialMixingTerminal.dll"]
+}

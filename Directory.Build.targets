@@ -1,0 +1,10 @@
+<Project>
+  <Target Name="GenerateModVersion" BeforeTargets="CoreCompile">
+    <WriteLinesToFile File="$(IntermediateOutputPath)ModVersion.g.cs"
+      Lines="namespace ScheduleOneMods { internal static class ModVersion { internal const string Value = &quot;$(Version)&quot;%3B } }"
+      Overwrite="true" WriteOnlyWhenDifferent="true" />
+    <ItemGroup>
+      <Compile Include="$(IntermediateOutputPath)ModVersion.g.cs" />
+    </ItemGroup>
+  </Target>
+</Project>
